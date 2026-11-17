@@ -11,7 +11,7 @@ body{font-family:Arial,"Malgun Gothic",sans-serif}
 canvas{position:fixed;inset:0;width:100vw;height:100dvh;display:block;touch-action:none}
 #hud{position:fixed;z-index:20;top:12px;left:0;width:100%;padding:8px 16px;display:flex;justify-content:space-between;font-size:22px;font-weight:bold;color:#222;text-shadow:1px 1px white,-1px -1px white;pointer-events:none}
 #stage{position:fixed;z-index:20;top:52px;left:50%;transform:translateX(-50%);color:#ff2870;font-weight:bold;font-size:18px;text-shadow:1px 1px white,-1px -1px white;pointer-events:none}
-.screen{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;padding:20px;background:linear-gradient(135deg,#ffd6e5,#fff4fa,#d7e9ff)}
+.screen{position:fixed;inset:0;z-index:100;display:flex;flex-direction:column;justify-content:center;align-items:center;text-align:center;background:linear-gradient(135deg,#ffd6e5,#fff4fa,#d7e9ff)}
 #gameOver{display:none;background:rgba(20,10,35,.88);color:white}
 .logo{font-size:clamp(42px,10vw,82px);color:#ff1761;font-weight:900;text-shadow:-3px -3px white,3px -3px white,-3px 3px white,3px 3px white,7px 7px 0 rgba(100,30,70,.2);margin-bottom:25px}
 .sub{font-size:clamp(16px,4vw,24px);color:#63334b;margin-bottom:30px}
@@ -19,53 +19,41 @@ button{border:4px solid white;border-radius:18px;padding:14px 32px;margin:7px;mi
 button:active{transform:translateY(6px);box-shadow:none}
 #stopBtn{background:#555;box-shadow:0 6px 0 #222}
 .instructions{margin-top:25px;color:#555;line-height:1.7;font-size:15px}
-#scoreFinal{font-size:28px;margin:10px 0 25px}
-#newRecord{color:#ffcf33;font-size:22px;margin-bottom:10px}
-
-/* 블로그 입장 영역 */
-#blogBox{margin-top:22px;padding:18px 20px 12px;border:2px dashed rgba(255,255,255,.55);border-radius:20px;background:rgba(255,255,255,.08);max-width:92vw}
-#blogMsg{font-size:clamp(14px,3.8vw,18px);line-height:1.6;color:#ffe3ef;margin-bottom:6px}
-#blogBtn{background:#3d8bff;box-shadow:0 6px 0 #1f56ad;animation:pulse 1.2s ease-in-out infinite}
-@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
-#blogBtn:active{animation:none;transform:translateY(6px);box-shadow:none}
+#scoreFinal{font-size:28px;margin:10px 0 18px}#newRecord{color:#ffcf33;font-size:22px;margin-bottom:10px}
+#blogMsg{font-size:clamp(16px,4vw,22px);line-height:1.5;margin-bottom:10px;color:#fff}
+#blogBtn{background:#2f80ff;box-shadow:0 6px 0 #1a4fb0;animation:pulse 1.2s ease-in-out infinite}
+#blogBtn:active{animation:none}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.08)}}
+.btnRow{display:flex;flex-wrap:wrap;justify-content:center}
 </style>
 </head>
 <body>
 <canvas id="game"></canvas>
 <div id="hud"><div>SCORE : <span id="score">0</span></div><div><span id="hearts"></span></div></div>
 <div id="stage"></div>
-
 <div id="startScreen" class="screen">
   <div class="logo">GAME START!</div>
   <div class="sub">귀여운 캐릭터의 장애물 피하기 게임</div>
   <button id="startBtn">게임 시작</button>
-  <div class="instructions">PC : SPACE / ↑ / W 로 점프<br>스마트폰 : 화면을 터치해서 점프<br>300점부터 속도가 빨라집니다!</div>
+  <div class="instructions">PC : SPACE / ↑ / W 로 점프<br>스마트폰 : 화면을 터치해서 점프<br>1초마다 10점씩 올라가요!<br>시간이 갈수록 점점 빨라집니다!</div>
 </div>
-
 <div id="gameOver" class="screen">
-  <div class="logo">GAME OVER</div>
-  <div id="newRecord"></div>
+  <div class="logo">GAME OVER</div><div id="newRecord"></div>
   <div id="scoreFinal">최종 점수 : 0</div>
-  <button id="restartBtn">다시하기</button>
-  <button id="stopBtn">그만하기</button>
-
-  <div id="blogBox">
-    <div id="blogMsg">장애물에 3번 닿았어요! 😆<br>김세희님의 졸업작품을 보러 가볼까요?</div>
-    <button id="blogBtn">블로그 입장</button>
-  </div>
+  <div id="blogMsg">장애물에 3번 닿았어요! 😆<br>김세희님의 졸업작품을 보러 가볼까요?</div>
+  <button id="blogBtn">블로그 입장</button>
+  <div class="btnRow"><button id="restartBtn">다시하기</button><button id="stopBtn">그만하기</button></div>
 </div>
-
 <script>
 'use strict';
-
-/* ★★★ 김세희님 졸업작품 블로그 주소를 아래 따옴표 안에 넣어주세요 ★★★
-   예) const BLOG_URL = 'https://blog.naver.com/아이디'; */
-const BLOG_URL = 'https://m.blog.naver.com/o2278/224430302251';
-
+const BLOG_URL='https://m.blog.naver.com/o2278/224430302251';
+const POINTS_PER_SECOND=10; // 1초당 올라가는 점수
+const START_SPEED=9;        // 시작 속도 (기존 6)
+const MAX_SPEED=19;         // 최고 속도 (기존 15)
 const canvas=document.getElementById('game');
 const ctx=canvas.getContext('2d');
 let W=0,H=0,ground=0,DPR=1;
-let gameRunning=false,score=0,lives=3,speed=6,stage=1,frame=0,spawnTimer=0,lastTime=0,messageTimer=0;
+let gameRunning=false,score=0,lives=3,speed=START_SPEED,stage=1,frame=0,spawnTimer=0,lastTime=0,messageTimer=0;
 let animationId=0;
 let bestScore=0;
 try{bestScore=Number(localStorage.getItem('cuteGameBest')||0)}catch(e){bestScore=0}
@@ -99,33 +87,25 @@ function drawObstacle(o){const {x,y,w,h}=o;
 function face(x,y,w,h){ctx.fillStyle='#333';ctx.beginPath();ctx.arc(x+w*.4,y+h*.5,2.5,0,Math.PI*2);ctx.arc(x+w*.6,y+h*.5,2.5,0,Math.PI*2);ctx.fill()}
 function hit(a,b){const m=8;return a.x+m<b.x+b.w-m&&a.x+a.w-m>b.x+m&&a.y+m<b.y+b.h-m&&a.y+a.h-m>b.y+m}
 function checkCollision(){if(player.invincible>0)return;for(let i=0;i<obstacles.length;i++){if(hit(player,obstacles[i])){lives--;player.invincible=100;obstacles.splice(i,1);updateHearts();explosion(player.x+player.w/2,player.y+player.h/2);if(lives<=0)endGame();break}}}
-function updateHearts(){document.getElementById('hearts').textContent='❤️'.repeat(Math.max(lives,0))+'🤍'.repeat(3-Math.max(lives,0))}
+function updateHearts(){document.getElementById('hearts').textContent='❤️'.repeat(lives)+'🤍'.repeat(3-lives)}
 function background(){const palettes=[['#ffd7e5','#fff4fa'],['#d9c9ef','#f3eaff'],['#9cc9ee','#edf8ff'],['#e67da5','#9b77b7'],['#111','#555']];const colors=palettes[stage-1]||palettes[4];const grad=ctx.createLinearGradient(0,0,W,H);grad.addColorStop(0,colors[0]);grad.addColorStop(1,colors[1]);ctx.fillStyle=grad;ctx.fillRect(0,0,W,H);ctx.fillStyle='rgba(255,255,255,.55)';for(let i=0;i<7;i++){const cx=((i*230-frame*.15)%(W+300))-150,cy=70+(i%3)*70;ctx.beginPath();ctx.arc(cx,cy,45,0,Math.PI*2);ctx.arc(cx+45,cy-15,55,0,Math.PI*2);ctx.arc(cx+95,cy,42,0,Math.PI*2);ctx.fill()}ctx.fillStyle='rgba(255,255,255,.7)';ctx.fillRect(0,ground,W,H-ground);ctx.strokeStyle='rgba(100,70,100,.25)';ctx.lineWidth=3;ctx.setLineDash([12,12]);ctx.lineDashOffset=-frame*speed*.3;ctx.beginPath();ctx.moveTo(0,ground);ctx.lineTo(W,ground);ctx.stroke();ctx.setLineDash([])}
 function explosion(x,y){for(let i=0;i<25;i++)particles.push({x,y,vx:(Math.random()-.5)*9,vy:(Math.random()-.5)*9,life:45,color:Math.random()>.5?'#ff477e':'#ffd23f'})}
 function updateParticles(dt){for(let i=particles.length-1;i>=0;i--){const p=particles[i];p.x+=p.vx*dt;p.y+=p.vy*dt;p.vy+=.25*dt;p.life-=dt;if(p.life<=0)particles.splice(i,1)}}
 function drawParticles(){for(const p of particles){ctx.globalAlpha=p.life/45;ctx.fillStyle=p.color;ctx.fillRect(p.x,p.y,6,6)}ctx.globalAlpha=1}
-function difficulty(){speed=score>=300?7.8+(score-300)*.018:6+score*.006;speed=Math.min(speed,15);const next=Math.min(5,Math.floor(score/500)+1);if(next!==stage){stage=next;showStage('STAGE '+stage+'!')}}
+function difficulty(){speed=Math.min(START_SPEED+score*.008,MAX_SPEED);const next=Math.min(5,Math.floor(score/300)+1);if(next!==stage){stage=next;showStage('STAGE '+stage+'! 속도 UP!')}}
 function showStage(text){document.getElementById('stage').textContent=text;messageTimer=100}
-function update(dt){frame+=dt;difficulty();player.update(dt);spawnTimer-=dt;if(spawnTimer<=0){makeObstacle();spawnTimer=Math.max(35,105-score*.08);if(score>700&&Math.random()<.18)setTimeout(()=>{if(gameRunning)makeObstacle()},250)}for(let i=obstacles.length-1;i>=0;i--){const o=obstacles[i];o.x-=speed*dt;if(o.flying){o.wave+=.1*dt;o.y+=Math.sin(o.wave)*.8*dt}if(!o.passed&&o.x+o.w<player.x){o.passed=true;score++}if(o.x+o.w<0)obstacles.splice(i,1)}checkCollision();updateParticles(dt);if(messageTimer>0){messageTimer-=dt;if(messageTimer<=0)document.getElementById('stage').textContent=''}document.getElementById('score').textContent=Math.floor(score)}
+function update(dt){frame+=dt;score+=POINTS_PER_SECOND*dt/60;difficulty();player.update(dt);spawnTimer-=dt;if(spawnTimer<=0){makeObstacle();spawnTimer=Math.max(40,85-score*.03)+Math.random()*25;if(score>1200&&Math.random()<.15)setTimeout(()=>{if(gameRunning)makeObstacle()},250)}for(let i=obstacles.length-1;i>=0;i--){const o=obstacles[i];o.x-=speed*dt;if(o.flying){o.wave+=.1*dt;o.y+=Math.sin(o.wave)*.8*dt}if(!o.passed&&o.x+o.w<player.x){o.passed=true}if(o.x+o.w<0)obstacles.splice(i,1)}checkCollision();updateParticles(dt);if(messageTimer>0){messageTimer-=dt;if(messageTimer<=0)document.getElementById('stage').textContent=''}document.getElementById('score').textContent=Math.floor(score)}
 function draw(){ctx.clearRect(0,0,W,H);background();drawParticles();for(const o of obstacles)drawObstacle(o);player.draw()}
 function loop(time){if(!gameRunning)return;const dt=Math.min((time-lastTime)/16.666,2);lastTime=time;update(dt);draw();if(gameRunning)animationId=requestAnimationFrame(loop)}
-function startGame(){if(animationId)cancelAnimationFrame(animationId);gameRunning=true;score=0;lives=3;speed=6;stage=1;frame=0;spawnTimer=55;obstacles=[];particles=[];player.x=Math.max(35,W*.12);player.y=ground-player.h;player.vy=0;player.onGround=true;player.invincible=0;updateHearts();document.getElementById('score').textContent='0';document.getElementById('stage').textContent='';document.getElementById('startScreen').style.display='none';document.getElementById('gameOver').style.display='none';lastTime=performance.now();animationId=requestAnimationFrame(loop)}
+function startGame(){if(animationId)cancelAnimationFrame(animationId);gameRunning=true;score=0;lives=3;speed=START_SPEED;stage=1;frame=0;spawnTimer=45;obstacles=[];particles=[];player.x=Math.max(35,W*.12);player.y=ground-player.h;player.vy=0;player.onGround=true;player.invincible=0;updateHearts();document.getElementById('score').textContent='0';document.getElementById('stage').textContent='';document.getElementById('startScreen').style.display='none';document.getElementById('gameOver').style.display='none';lastTime=performance.now();animationId=requestAnimationFrame(loop)}
 function endGame(){gameRunning=false;const finalScore=Math.floor(score);let record=false;if(finalScore>bestScore){bestScore=finalScore;record=true;try{localStorage.setItem('cuteGameBest',bestScore)}catch(e){}}document.getElementById('scoreFinal').textContent='최종 점수 : '+finalScore;document.getElementById('newRecord').textContent=record?'🎉 신기록!':'최고 점수 : '+bestScore;document.getElementById('gameOver').style.display='flex'}
 function jump(){if(gameRunning)player.jump()}
-
-/* 블로그 입장 */
-function enterBlog(){
-  if(!BLOG_URL){alert('블로그 주소가 아직 설정되지 않았어요.\n코드 상단의 BLOG_URL에 주소를 넣어주세요.');return}
-  window.location.href=BLOG_URL;
-}
-
 window.addEventListener('keydown',e=>{if(['Space','ArrowUp','KeyW'].includes(e.code)){e.preventDefault();jump()}});
 canvas.addEventListener('pointerdown',e=>{e.preventDefault();jump()},{passive:false});
 document.getElementById('startBtn').addEventListener('click',startGame);
 document.getElementById('restartBtn').addEventListener('click',startGame);
-document.getElementById('blogBtn').addEventListener('click',enterBlog);
+document.getElementById('blogBtn').addEventListener('click',()=>{window.location.href=BLOG_URL});
 document.getElementById('stopBtn').addEventListener('click',()=>{gameRunning=false;if(animationId)cancelAnimationFrame(animationId);document.getElementById('gameOver').style.display='none';document.getElementById('startScreen').style.display='flex';draw()});
-updateHearts();
 resize();draw();
 </script>
 </body>
